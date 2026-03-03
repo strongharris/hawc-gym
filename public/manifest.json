@@ -1,0 +1,28 @@
+{
+  "short_name": "HAWC Gym",
+  "name": "HAWC Gym — Northern California's First HYROX Affiliate",
+  "description": "HYROX training, personal training, group fitness, open gym, and youth fitness in San Ramon, CA.",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "logo192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "logo512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#050505",
+  "background_color": "#050505",
+  "orientation": "portrait-primary",
+  "categories": ["fitness", "health", "sports"]
+}

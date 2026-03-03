@@ -1,0 +1,21 @@
+{
+  "projectName": "hawc-gym",
+  "mode": "file-router",
+  "typescript": true,
+  "packageManager": "pnpm",
+  "includeExamples": false,
+  "tailwind": true,
+  "addOnOptions": {},
+  "envVarValues": {},
+  "git": true,
+  "routerOnly": false,
+  "version": 1,
+  "framework": "react",
+  "chosenAddOns": [
+    "biome",
+    "netlify",
+    "posthog",
+    "t3env",
+    "tanstack-query"
+  ]
+}
