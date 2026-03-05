@@ -9,8 +9,11 @@ import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
 const config = defineConfig({
+	server: {
+		port: 3001,
+	},
 	plugins: [
-		devtools(),
+		devtools({ eventBusConfig: { port: 42070 } }),
 		netlify(),
 		tsconfigPaths({ projects: ["./tsconfig.json"] }),
 		tailwindcss(),

@@ -3,8 +3,8 @@ export const SITE_URL = "https://hawcgym.com";
 export const GYM_INFO = {
 	name: "HAWC GYM",
 	tagline: "Northern California's FIRST HYROX Gym!",
-	address: "12811 Alcosta Blvd, San Ramon, CA 94583",
-	streetAddress: "12811 Alcosta Blvd",
+	address: "12811a Alcosta Blvd, San Ramon, CA 94583",
+	streetAddress: "12811a Alcosta Blvd",
 	city: "San Ramon",
 	state: "CA",
 	zip: "94583",
@@ -16,8 +16,23 @@ export const GYM_INFO = {
 		latitude: 37.7624,
 		longitude: -121.9178,
 	},
+	// Mon–Fri 6 AM–8 PM, Sat 7 AM–12 PM, Sun closed
+	hours: [
+		{ day: "Monday",    open: "6:00 AM",  close: "8:00 PM" },
+		{ day: "Tuesday",   open: "6:00 AM",  close: "8:00 PM" },
+		{ day: "Wednesday", open: "6:00 AM",  close: "8:00 PM" },
+		{ day: "Thursday",  open: "6:00 AM",  close: "8:00 PM" },
+		{ day: "Friday",    open: "6:00 AM",  close: "8:00 PM" },
+		{ day: "Saturday",  open: "7:00 AM",  close: "12:00 PM" },
+		{ day: "Sunday",    open: null,        close: null },
+	],
+	// schema.org openingHours format
+	openingHours: [
+		"Mo-Fr 06:00-20:00",
+		"Sa 07:00-12:00",
+	],
 	socialLinks: {
-		instagram: "https://www.instagram.com/hawcgym",
+		instagram: "https://www.instagram.com/hawcsanramon/",
 		facebook: "https://www.facebook.com/hawcgym",
 		yelp: "https://www.yelp.com/biz/hawc-gym-san-ramon",
 	},
@@ -28,27 +43,22 @@ export const SERVICES = [
 		title: "HYROX",
 		description:
 			"First Race or trying to PR - There's a spot on our team for everyone!",
-		image: "https://picsum.photos/seed/hyrox1/600/600",
 	},
 	{
 		title: "1x1 Personal Training",
 		description: "Personalized coaching to meet your specific fitness goals.",
-		image: "https://picsum.photos/seed/personaltraining/600/600",
 	},
 	{
 		title: "Group Cross Training",
 		description: "High energy group classes that challenge your limits.",
-		image: "https://picsum.photos/seed/crosstraining/600/600",
 	},
 	{
 		title: "Open Gym",
 		description: "Access to top-tier equipment on your own schedule.",
-		image: "https://picsum.photos/seed/opengym/600/600",
 	},
 	{
 		title: "Youth Fitness Classes",
 		description: "Classes for ages 12-14. Building strong foundations.",
-		image: "https://picsum.photos/seed/youthfitness/600/600",
 	},
 ];
 

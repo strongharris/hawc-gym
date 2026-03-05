@@ -2,28 +2,33 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
 	ArrowDownRight,
 	ArrowRight,
+	Clock,
 	Facebook,
 	Instagram,
 	Mail,
 	MapPin,
 	Menu,
 	Phone,
-	Play,
-	Star,
 	X,
 } from "lucide-react";
 import { AnimatePresence, motion, useScroll, useTransform } from "motion/react";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import CommunitySection from "../components/CommunitySection";
 import ModernLogo from "../components/ModernLogo";
 import RevealText from "../components/RevealText";
+import StatsStrip from "../components/StatsStrip";
+import TheSpaceSection from "../components/TheSpaceSection";
 import YelpIcon from "../components/YelpIcon";
+import { images, SERVICE_IMAGES } from "../assets/images";
 import { GYM_INFO, REVIEWS, SERVICES, SITE_URL } from "../constants";
+import { gsap, prefersReducedMotion } from "../lib/gsap";
+import { useGsapLineReveal } from "../hooks/useGsapLineReveal";
 
 const SEO = {
 	title: "HAWC Gym — Northern California's First HYROX Affiliate | San Ramon, CA",
 	description:
 		"HAWC Gym in San Ramon, CA is Northern California's first official HYROX affiliate. We offer HYROX race training, 1-on-1 personal training, group cross training classes, open gym, and youth fitness programs. First class free.",
-	image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1200&auto=format&fit=crop",
+	image: `${SITE_URL}/images/og-hero.jpg`,
 } as const;
 
 export const Route = createFileRoute("/")({
@@ -60,7 +65,7 @@ export const Route = createFileRoute("/")({
 			{
 				property: "og:image:alt",
 				content:
-					"HAWC Gym interior — functional fitness facility in San Ramon, CA",
+					"HAWC Gym community — 100+ members gathered outside the San Ramon facility",
 			},
 			{ property: "og:url", content: SITE_URL },
 			{ property: "og:type", content: "website" },
@@ -75,10 +80,13 @@ export const Route = createFileRoute("/")({
 			{
 				name: "twitter:image:alt",
 				content:
-					"HAWC Gym interior — functional fitness facility in San Ramon, CA",
+					"HAWC Gym community — 100+ members gathered outside the San Ramon facility",
 			},
 		],
-		links: [{ rel: "canonical", href: SITE_URL }],
+		links: [
+			{ rel: "canonical", href: SITE_URL },
+			{ rel: "preload", href: images.heroCommunity, as: "image", type: "image/jpeg" },
+		],
 		scripts: [
 			{
 				type: "application/ld+json",
@@ -113,6 +121,7 @@ export const Route = createFileRoute("/")({
 							telephone: GYM_INFO.phonePrimary,
 							email: GYM_INFO.email,
 							image: SEO.image,
+							openingHours: GYM_INFO.openingHours,
 							address: {
 								"@type": "PostalAddress",
 								streetAddress: GYM_INFO.streetAddress,
@@ -206,10 +215,109 @@ function LandingPage() {
 	const heroY = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
 	const heroOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
 
+	const servicesLineRef = useGsapLineReveal();
+	const servicesSectionRef = useRef<HTMLElement>(null);
+	const contactLeftRef = useRef<HTMLDivElement>(null);
+	const contactRightRef = useRef<HTMLDivElement>(null);
+
 	useEffect(() => {
 		if (isMenuOpen) document.body.style.overflow = "hidden";
 		else document.body.style.overflow = "unset";
 	}, [isMenuOpen]);
+
+	// Service cards — clip-path curtain reveal (desktop only)
+	useEffect(() => {
+		const section = servicesSectionRef.current;
+		if (!section || prefersReducedMotion()) return;
+
+		const ctx = gsap.context(() => {
+			const mm = gsap.matchMedia();
+			mm.add("(min-width: 768px)", () => {
+				const cards = gsap.utils.toArray<HTMLElement>("[data-service-card]", section);
+				gsap.set(cards, { clipPath: "inset(100% 0 0 0)" });
+				gsap.to(cards, {
+					clipPath: "inset(0% 0 0 0)",
+					duration: 0.7,
+					stagger: 0.12,
+					ease: "power3.out",
+					scrollTrigger: {
+						trigger: section,
+						start: "top 60%",
+						once: true,
+					},
+				});
+			});
+		}, section);
+
+		return () => ctx.revert();
+	}, []);
+
+	// Contact section — staggered entrance
+	useEffect(() => {
+		const left = contactLeftRef.current;
+		const right = contactRightRef.current;
+		if (prefersReducedMotion()) return;
+
+		const ctx = gsap.context(() => {
+			if (left) {
+				const leftItems = gsap.utils.toArray<HTMLElement>("[data-form-field]", left);
+				gsap.fromTo(
+					leftItems,
+					{ y: 40, opacity: 0 },
+					{
+						y: 0,
+						opacity: 1,
+						duration: 0.7,
+						stagger: 0.1,
+						ease: "power3.out",
+						scrollTrigger: {
+							trigger: left,
+							start: "top 75%",
+							once: true,
+						},
+					},
+				);
+			}
+
+			if (right) {
+				const socialLinks = gsap.utils.toArray<HTMLElement>("[data-social-link]", right);
+				gsap.fromTo(
+					socialLinks,
+					{ x: 40, opacity: 0 },
+					{
+						x: 0,
+						opacity: 1,
+						duration: 0.7,
+						stagger: 0.1,
+						ease: "power3.out",
+						scrollTrigger: {
+							trigger: right,
+							start: "top 75%",
+							once: true,
+						},
+					},
+				);
+
+				gsap.fromTo(
+					"[data-contact-address]",
+					{ y: 30, opacity: 0 },
+					{
+						y: 0,
+						opacity: 1,
+						duration: 0.7,
+						ease: "power3.out",
+						scrollTrigger: {
+							trigger: right,
+							start: "top 65%",
+							once: true,
+						},
+					},
+				);
+			}
+		});
+
+		return () => ctx.revert();
+	}, []);
 
 	return (
 		<div className="min-h-screen bg-[#050505] text-zinc-50 font-sans selection:bg-[#0055FF] selection:text-white overflow-hidden">
@@ -319,10 +427,12 @@ function LandingPage() {
 						className="absolute inset-0 z-0"
 					>
 						<img
-							src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2668&auto=format&fit=crop"
-							alt="Interior of HAWC Gym functional fitness facility with training equipment in San Ramon, California"
+							src={images.heroCommunity}
+							alt="100+ HAWC Gym members gathered outside the San Ramon facility, HAWC GYM signage visible"
 							className="w-full h-full object-cover opacity-40 grayscale"
 							fetchPriority="high"
+							width={1400}
+							height={933}
 						/>
 						<div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#050505]/50 to-[#050505]" />
 					</motion.div>
@@ -334,8 +444,8 @@ function LandingPage() {
 							transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
 							className="mb-6 flex justify-center"
 						>
-							<p className="px-4 py-1.5 border border-white/20 rounded-full text-[10px] font-mono uppercase tracking-[0.3em] text-white/70 backdrop-blur-md">
-								Northern California's First HYROX Affiliate
+							<p className="px-4 py-1.5 border-2 border-white/60 rounded-full text-[10px] font-mono uppercase tracking-[0.3em] text-white backdrop-blur-md">
+								Northern California's First <span className="text-[#AAFF00] font-bold">HYROX</span> Affiliate
 							</p>
 						</motion.div>
 
@@ -347,7 +457,7 @@ function LandingPage() {
 								delay: 0.2,
 								ease: [0.16, 1, 0.3, 1],
 							}}
-							className="text-[12vw] md:text-[10vw] font-display font-black uppercase leading-[0.85] tracking-tighter text-white"
+							className="text-[9vw] md:text-[7vw] font-display font-black uppercase leading-[0.85] tracking-tighter text-white"
 						>
 							Unleash
 							<br />
@@ -364,7 +474,7 @@ function LandingPage() {
 							initial={{ y: 50, opacity: 0 }}
 							animate={{ y: 0, opacity: 1 }}
 							transition={{ duration: 1, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
-							className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-6"
+							className="mt-12 flex justify-center"
 						>
 							<a
 								href="#contact"
@@ -383,51 +493,19 @@ function LandingPage() {
 									Start Training <ArrowRight size={16} />
 								</span>
 							</a>
-
-							<button
-								type="button"
-								aria-label="Watch HAWC Gym film"
-								className="flex items-center gap-3 text-white/70 hover:text-white transition-colors font-mono text-xs uppercase tracking-widest group"
-							>
-								<span className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center group-hover:border-white/60 transition-colors" aria-hidden="true">
-									<Play size={14} className="ml-1" />
-								</span>
-								Watch Film
-							</button>
 						</motion.div>
 					</div>
 				</section>
 
 				{/* --- STATS STRIP --- */}
-				<section aria-label="Gym quick facts" className="border-y border-white/10 bg-[#050505]/80 backdrop-blur-xl relative z-20">
-					<dl className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 divide-x divide-white/10">
-						{[
-							{ label: "Location", val: "San Ramon" },
-							{ label: "Established", val: "2017" },
-							{ label: "Type", val: "Official Hyrox" },
-							{ label: "Vibe", val: "Raw Iron" },
-						].map((stat) => (
-							<div
-								key={stat.label}
-								className="p-8 md:p-12 text-center flex flex-col items-center justify-center group"
-							>
-								<dt className="text-[10px] font-mono uppercase tracking-[0.2em] text-white/40 mb-3 group-hover:text-[#0055FF] transition-colors">
-									{stat.label}
-								</dt>
-								<dd className="text-xl md:text-3xl font-display font-light uppercase tracking-wide text-white/90">
-									{stat.val}
-								</dd>
-							</div>
-						))}
-					</dl>
-				</section>
+				<StatsStrip />
 
 				{/* --- SERVICES (Horizontal Accordion) --- */}
 				{/* biome-ignore lint/correctness/useUniqueElementIds: intentional navigation anchor */}
-				<section id="program" aria-label="Fitness programs and services" className="border-b border-white/10 overflow-hidden">
+				<section ref={servicesSectionRef} id="program" aria-label="Fitness programs and services" className="border-b border-white/10 overflow-hidden px-8 md:px-16 lg:px-24">
 					<RevealText>
-						<div className="flex items-center gap-4 py-16 md:py-20 px-6 md:px-12">
-							<div aria-hidden="true" className="w-12 h-[1px] bg-[#0055FF]" />
+						<div className="flex items-center gap-4 py-16 md:py-20">
+							<div ref={servicesLineRef} aria-hidden="true" className="w-12 h-[1px] bg-[#0055FF] origin-left" />
 							<h2 className="font-mono text-xs uppercase tracking-[0.3em] text-[#0055FF]">
 								Our Programs
 							</h2>
@@ -443,9 +521,10 @@ function LandingPage() {
 								className="group relative flex-shrink-0 w-[85vw] snap-center border border-white/10 h-[55vh] min-h-[400px] overflow-hidden"
 							>
 								<img
-									src={service.image}
+									src={SERVICE_IMAGES[service.title]}
 									alt={`${service.title} program at HAWC Gym`}
 									loading="lazy"
+									decoding="async"
 									className="absolute inset-0 w-full h-full object-cover grayscale transition-all duration-700"
 								/>
 								<div className="absolute inset-0 bg-black/60 transition-all duration-500" />
@@ -473,12 +552,14 @@ function LandingPage() {
 							<article
 								key={service.title}
 								role="listitem"
+								data-service-card
 								className="group relative flex-1 hover:flex-[2.5] transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] border-r border-white/10 last:border-r-0 overflow-hidden cursor-crosshair"
 							>
 								<img
-									src={service.image}
+									src={SERVICE_IMAGES[service.title]}
 									alt={`${service.title} program at HAWC Gym`}
 									loading="lazy"
+									decoding="async"
 									className="absolute inset-0 w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700"
 								/>
 								<div className="absolute inset-0 transition-colors duration-500 bg-black/70 group-hover:bg-black/40" />
@@ -512,150 +593,35 @@ function LandingPage() {
 					</div>
 				</section>
 
+				<div aria-hidden="true" className="py-16 md:py-24 bg-[#050505]" />
+
 				{/* --- THE SPACE (SPLIT LAYOUT) --- */}
-				{/* biome-ignore lint/correctness/useUniqueElementIds: intentional navigation anchor */}
-				<section
-					id="space"
-					aria-label="Our facility"
-					className="relative border-y border-white/10 bg-[#0a0a0a]"
-				>
-					<div className="grid grid-cols-1 lg:grid-cols-2 min-h-[800px]">
-						<div className="p-12 md:p-24 flex flex-col justify-center relative z-10">
-							<RevealText>
-								<h2 className="text-6xl md:text-8xl font-display font-black uppercase leading-[0.85] tracking-tighter mb-8">
-									The
-									<br />
-									<span
-										className="text-transparent"
-										style={{ WebkitTextStroke: "1px rgba(255,255,255,0.5)" }}
-									>
-										Space
-									</span>
-								</h2>
-								<p className="text-xl text-white/60 leading-relaxed max-w-md mb-12 font-light">
-									No mirrors to distract. No AC to comfort. Just you, the
-									weights, and the work. Our 5,000 sq ft facility in San Ramon is designed for functional
-									fitness, HYROX preparation, and raw strength training.
-								</p>
-							</RevealText>
+				<TheSpaceSection />
 
-							<ul className="space-y-6" aria-label="Facility highlights">
-								{[
-									"5000 SQ FT Facility",
-									"Competition Grade Rigs",
-									"Concept2 Ergs",
-								].map((feature, i) => (
-									<RevealText delay={0.2 + i * 0.1} key={feature}>
-										<li className="flex items-center gap-4 group cursor-default">
-											<span aria-hidden="true" className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center group-hover:border-[#0055FF] group-hover:bg-[#0055FF]/10 transition-colors">
-												<span className="w-1.5 h-1.5 bg-white/40 rounded-full group-hover:bg-[#0055FF] transition-colors" />
-											</span>
-											<span className="font-mono text-sm uppercase tracking-widest text-white/70 group-hover:text-white transition-colors">
-												{feature}
-											</span>
-										</li>
-									</RevealText>
-								))}
-							</ul>
-						</div>
-
-						<div className="relative h-[500px] lg:h-auto overflow-hidden group">
-							<img
-								src="https://images.unsplash.com/photo-1599058945522-28d584b6f0ff?q=80&w=2069"
-								alt="HAWC Gym training space with competition-grade rigs and functional fitness equipment"
-								loading="lazy"
-								className="absolute inset-0 w-full h-full object-cover grayscale opacity-60 group-hover:scale-105 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-1000"
-							/>
-							<div className="absolute inset-0 bg-gradient-to-r from-[#0a0a0a] to-transparent lg:w-1/3" />
-						</div>
-					</div>
-				</section>
-
-				{/* --- TESTIMONIALS (MINIMAL CARDS) --- */}
-				{/* biome-ignore lint/correctness/useUniqueElementIds: intentional navigation anchor */}
-				<section
-					id="community"
-					aria-label="Member testimonials and reviews"
-					className="py-24 md:py-40 px-6 md:px-12 max-w-7xl mx-auto"
-				>
-					<RevealText>
-						<div className="flex flex-col md:flex-row justify-between items-end mb-20 gap-8">
-							<h2 className="text-5xl md:text-7xl font-display font-black uppercase leading-[0.9] tracking-tighter">
-								Community
-								<br />
-								<span className="text-[#0055FF]">Voices</span>
-							</h2>
-							<div className="flex items-center gap-3 px-6 py-3 rounded-full border border-white/10 bg-white/5 backdrop-blur-sm">
-								<Star aria-hidden="true" className="text-[#0055FF] fill-[#0055FF]" size={16} />
-								<span className="font-mono text-xs uppercase tracking-widest text-white/80">
-									5.0 Average Rating
-								</span>
-							</div>
-						</div>
-					</RevealText>
-
-					<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-						{REVIEWS.map((review, i) => (
-							<motion.article
-								key={review.name}
-								initial={{ opacity: 0, y: 30 }}
-								whileInView={{ opacity: 1, y: 0 }}
-								viewport={{ once: true }}
-								transition={{ duration: 0.6, delay: i * 0.1 }}
-								className="p-8 md:p-10 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors flex flex-col justify-between min-h-[320px]"
-							>
-								<div>
-									<div className="flex gap-1 mb-8" role="img" aria-label={`${review.stars} out of 5 stars`}>
-										{[1, 2, 3, 4, 5].map((n) => (
-											<Star
-												key={n}
-												size={14}
-												aria-hidden="true"
-												className="text-[#0055FF] fill-[#0055FF]"
-											/>
-										))}
-									</div>
-									<blockquote className="text-lg text-white/80 font-light leading-relaxed mb-8">
-										<p>"{review.text}"</p>
-									</blockquote>
-								</div>
-								<footer className="flex justify-between items-center pt-6 border-t border-white/10">
-									<cite className="font-display font-bold uppercase tracking-wide text-white not-italic">
-										{review.name}
-									</cite>
-									<time dateTime={new Date(review.date).toISOString().split("T")[0]} className="font-mono text-[10px] text-white/40">
-										{review.date}
-									</time>
-								</footer>
-							</motion.article>
-						))}
-					</div>
-				</section>
+<CommunitySection />
 
 				{/* --- CONTACT FOOTER --- */}
 				{/* biome-ignore lint/correctness/useUniqueElementIds: intentional navigation anchor */}
 				<footer
 					id="contact"
-					className="relative border-t border-white/10 overflow-hidden"
+					className="relative border-t border-white/10 overflow-hidden px-8 md:px-16 lg:px-24"
 				>
 					<div aria-hidden="true" className="absolute inset-0 bg-[#0055FF]/5" />
 
 					<div className="relative z-10 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2">
-						<div className="p-12 md:p-24 lg:border-r border-white/10">
-							<RevealText>
-								<h2 className="text-5xl md:text-7xl font-display font-black uppercase leading-[0.9] tracking-tighter mb-6">
-									Start
-									<br />
-									Training.
-								</h2>
-								<p className="text-white/50 font-mono text-xs uppercase tracking-widest mb-16">
-									First class is on us.
-								</p>
-							</RevealText>
+						<div ref={contactLeftRef} className="p-12 md:p-24">
+							<h2 data-form-field className="text-5xl md:text-7xl font-display font-black uppercase leading-[0.9] tracking-tighter mb-6">
+								Start
+								<br />
+								Training.
+							</h2>
+							<p data-form-field className="text-white/50 font-mono text-xs uppercase tracking-widest mb-16">
+								First class is on us.
+							</p>
 
 							<form aria-label="Contact form — get your free first class" className="space-y-10" onSubmit={(e) => e.preventDefault()}>
 								<div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-									<div className="relative group">
+									<div data-form-field className="relative group">
 										<input
 											type="text"
 											id={nameId}
@@ -672,7 +638,7 @@ function LandingPage() {
 											Name
 										</label>
 									</div>
-									<div className="relative group">
+									<div data-form-field className="relative group">
 										<input
 											type="tel"
 											id={phoneId}
@@ -690,7 +656,7 @@ function LandingPage() {
 										</label>
 									</div>
 								</div>
-								<div className="relative group">
+								<div data-form-field className="relative group">
 									<textarea
 										id={messageId}
 										name="message"
@@ -708,6 +674,7 @@ function LandingPage() {
 								</div>
 
 								<button
+									data-form-field
 									type="submit"
 									className="group relative w-full md:w-auto px-10 py-4 bg-white text-black font-mono text-xs font-bold uppercase tracking-widest overflow-hidden rounded-full mt-8"
 								>
@@ -727,13 +694,14 @@ function LandingPage() {
 							</form>
 						</div>
 
-						<div className="p-12 md:p-24 flex flex-col justify-between bg-white/5 backdrop-blur-sm">
+						<div ref={contactRightRef} className="p-12 md:p-24 flex flex-col justify-between bg-gradient-to-br from-white/[0.03] to-white/[0.07]">
 							<div>
 								<h3 className="font-mono text-xs uppercase tracking-[0.3em] text-white/40 mb-12">
 									Connect With Us
 								</h3>
 								<nav aria-label="Social media links" className="space-y-6">
 									<a
+										data-social-link
 										href={GYM_INFO.socialLinks.instagram}
 										target="_blank"
 										rel="noopener noreferrer"
@@ -748,6 +716,7 @@ function LandingPage() {
 										</span>
 									</a>
 									<a
+										data-social-link
 										href={GYM_INFO.socialLinks.facebook}
 										target="_blank"
 										rel="noopener noreferrer"
@@ -762,6 +731,7 @@ function LandingPage() {
 										</span>
 									</a>
 									<a
+										data-social-link
 										href={GYM_INFO.socialLinks.yelp}
 										target="_blank"
 										rel="noopener noreferrer"
@@ -778,7 +748,7 @@ function LandingPage() {
 								</nav>
 							</div>
 
-							<address className="mt-16 space-y-4 not-italic">
+							<address data-contact-address className="mt-16 space-y-4 not-italic">
 								<div className="flex items-start gap-4 text-white/60">
 									<MapPin size={18} aria-hidden="true" className="text-[#0055FF] shrink-0 mt-1" />
 									<a
@@ -801,6 +771,17 @@ function LandingPage() {
 									<a href={`mailto:${GYM_INFO.email}`} className="font-mono text-sm hover:text-white transition-colors">
 										{GYM_INFO.email}
 									</a>
+								</div>
+								<div className="flex items-start gap-4 text-white/60 pt-2">
+									<Clock size={18} aria-hidden="true" className="text-[#0055FF] shrink-0 mt-0.5" />
+									<dl className="font-mono text-sm space-y-1">
+										{GYM_INFO.hours.map(({ day, open, close }) => (
+											<div key={day} className="flex gap-3">
+												<dt className="w-28 text-white/40">{day}</dt>
+												<dd>{open ? `${open} – ${close}` : "Closed"}</dd>
+											</div>
+										))}
+									</dl>
 								</div>
 							</address>
 						</div>
