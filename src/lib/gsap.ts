@@ -1,6 +1,7 @@
 import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
+import ScrollTriggerPkg from "gsap/ScrollTrigger";
 
+const ScrollTrigger = ScrollTriggerPkg;
 gsap.registerPlugin(ScrollTrigger);
 
 export { gsap, ScrollTrigger };
