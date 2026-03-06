@@ -86,10 +86,10 @@ export default function TheSpaceSection() {
 			aria-label="Our facility"
 			className="relative border-y border-white/10 bg-[#0a0a0a] px-8 md:px-16 lg:px-24"
 		>
-			<div className="grid grid-cols-1 lg:grid-cols-2 min-h-[800px]">
+			<div className="grid grid-cols-1 lg:grid-cols-2 min-h-0 lg:min-h-[800px]">
 				<div
 					data-space-text
-					className="p-12 md:p-24 flex flex-col justify-center relative z-10"
+					className="p-6 sm:p-8 md:p-16 lg:p-24 flex flex-col justify-center relative z-10"
 				>
 					<h2
 						data-space-heading
@@ -142,7 +142,7 @@ export default function TheSpaceSection() {
 					</ul>
 				</div>
 
-				<div className="relative h-[500px] lg:h-auto overflow-hidden group">
+				<div className="relative h-[300px] sm:h-[400px] lg:h-auto overflow-hidden group">
 					<img
 						ref={imageRef}
 						src={images.spaceCommunity}

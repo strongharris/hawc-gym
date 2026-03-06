@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
 	ArrowDownRight,
 	ArrowRight,
+	Calendar,
 	Clock,
 	Facebook,
 	Instagram,
@@ -15,9 +16,12 @@ import { AnimatePresence, motion, useScroll, useTransform } from "motion/react";
 import { useEffect, useId, useRef, useState } from "react";
 import CommunitySection from "../components/CommunitySection";
 import ModernLogo from "../components/ModernLogo";
+import ReviewsSection from "../components/ReviewsSection";
 import RevealText from "../components/RevealText";
+import ScrollToTop from "../components/ScrollToTop";
 import StatsStrip from "../components/StatsStrip";
 import TheSpaceSection from "../components/TheSpaceSection";
+import ScheduleModal from "../components/schedule/ScheduleModal";
 import YelpIcon from "../components/YelpIcon";
 import { images, SERVICE_IMAGES } from "../assets/images";
 import { GYM_INFO, REVIEWS, SERVICES, SITE_URL } from "../constants";
@@ -25,7 +29,8 @@ import { gsap, prefersReducedMotion } from "../lib/gsap";
 import { useGsapLineReveal } from "../hooks/useGsapLineReveal";
 
 const SEO = {
-	title: "HAWC Gym — Northern California's First HYROX Affiliate | San Ramon, CA",
+	title:
+		"HAWC Gym — Northern California's First HYROX Affiliate | San Ramon, CA",
 	description:
 		"HAWC Gym in San Ramon, CA is Northern California's first official HYROX affiliate. We offer HYROX race training, 1-on-1 personal training, group cross training classes, open gym, and youth fitness programs. First class free.",
 	image: `${SITE_URL}/images/og-hero.jpg`,
@@ -85,7 +90,12 @@ export const Route = createFileRoute("/")({
 		],
 		links: [
 			{ rel: "canonical", href: SITE_URL },
-			{ rel: "preload", href: images.heroCommunity, as: "image", type: "image/jpeg" },
+			{
+				rel: "preload",
+				href: images.heroCommunity,
+				as: "image",
+				type: "image/jpeg",
+			},
 		],
 		scripts: [
 			{
@@ -208,6 +218,8 @@ export const Route = createFileRoute("/")({
 
 function LandingPage() {
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
+	const [isScheduleOpen, setIsScheduleOpen] = useState(false);
+	const [activeServiceIndex, setActiveServiceIndex] = useState(0);
 	const nameId = useId();
 	const phoneId = useId();
 	const messageId = useId();
@@ -217,13 +229,38 @@ function LandingPage() {
 
 	const servicesLineRef = useGsapLineReveal();
 	const servicesSectionRef = useRef<HTMLElement>(null);
+	const mobileCarouselRef = useRef<HTMLDivElement>(null);
 	const contactLeftRef = useRef<HTMLDivElement>(null);
 	const contactRightRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
-		if (isMenuOpen) document.body.style.overflow = "hidden";
+		if (isMenuOpen || isScheduleOpen) document.body.style.overflow = "hidden";
 		else document.body.style.overflow = "unset";
-	}, [isMenuOpen]);
+	}, [isMenuOpen, isScheduleOpen]);
+
+	// Mobile services carousel — track active card for pagination dots
+	useEffect(() => {
+		const carousel = mobileCarouselRef.current;
+		if (!carousel) return;
+
+		const cards = Array.from(carousel.children) as HTMLElement[];
+		if (cards.length === 0) return;
+
+		const observer = new IntersectionObserver(
+			(entries) => {
+				for (const entry of entries) {
+					if (entry.isIntersecting) {
+						const idx = cards.indexOf(entry.target as HTMLElement);
+						if (idx !== -1) setActiveServiceIndex(idx);
+					}
+				}
+			},
+			{ root: carousel, threshold: 0.6 },
+		);
+
+		for (const card of cards) observer.observe(card);
+		return () => observer.disconnect();
+	}, []);
 
 	// Service cards — clip-path curtain reveal (desktop only)
 	useEffect(() => {
@@ -233,7 +270,10 @@ function LandingPage() {
 		const ctx = gsap.context(() => {
 			const mm = gsap.matchMedia();
 			mm.add("(min-width: 768px)", () => {
-				const cards = gsap.utils.toArray<HTMLElement>("[data-service-card]", section);
+				const cards = gsap.utils.toArray<HTMLElement>(
+					"[data-service-card]",
+					section,
+				);
 				gsap.set(cards, { clipPath: "inset(100% 0 0 0)" });
 				gsap.to(cards, {
 					clipPath: "inset(0% 0 0 0)",
@@ -260,7 +300,10 @@ function LandingPage() {
 
 		const ctx = gsap.context(() => {
 			if (left) {
-				const leftItems = gsap.utils.toArray<HTMLElement>("[data-form-field]", left);
+				const leftItems = gsap.utils.toArray<HTMLElement>(
+					"[data-form-field]",
+					left,
+				);
 				gsap.fromTo(
 					leftItems,
 					{ y: 40, opacity: 0 },
@@ -280,7 +323,10 @@ function LandingPage() {
 			}
 
 			if (right) {
-				const socialLinks = gsap.utils.toArray<HTMLElement>("[data-social-link]", right);
+				const socialLinks = gsap.utils.toArray<HTMLElement>(
+					"[data-social-link]",
+					right,
+				);
 				gsap.fromTo(
 					socialLinks,
 					{ x: 40, opacity: 0 },
@@ -330,7 +376,10 @@ function LandingPage() {
 			</a>
 
 			{/* --- ATMOSPHERIC GLOW --- */}
-			<div aria-hidden="true" className="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-[#0055FF] rounded-full blur-[150px] opacity-[0.07] pointer-events-none z-0" />
+			<div
+				aria-hidden="true"
+				className="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-[#0055FF] rounded-full blur-[150px] opacity-[0.07] pointer-events-none z-0"
+			/>
 
 			{/* --- NOISE TEXTURE --- */}
 			<div
@@ -347,9 +396,13 @@ function LandingPage() {
 				initial={{ y: -100 }}
 				animate={{ y: 0 }}
 				transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-				className="fixed top-0 w-full z-50 px-6 md:px-12 py-6 flex justify-between items-center mix-blend-difference"
+				className="fixed top-0 w-full z-50 px-6 md:px-12 py-6 flex justify-between items-center mix-blend-difference safe-area-top"
 			>
-				<a href="/" className="flex items-center gap-4" aria-label="HAWC Gym — Home">
+				<a
+					href="/"
+					className="flex items-center gap-4"
+					aria-label="HAWC Gym — Home"
+				>
 					<ModernLogo className="w-8 h-8 text-white" />
 					<span className="font-display font-bold text-xl tracking-widest uppercase text-white">
 						HAWC<span className="text-[#0055FF]">.</span>
@@ -357,28 +410,44 @@ function LandingPage() {
 				</a>
 
 				<div className="hidden md:flex items-center gap-12 font-mono text-xs uppercase tracking-[0.2em] text-white">
-					<a href="#program" className="hover:text-[#0055FF] transition-colors">
+					<a
+						href="#program"
+						className="hover:text-[#0055FF] active:text-[#0055FF] transition-colors"
+					>
 						Program
 					</a>
-					<a href="#space" className="hover:text-[#0055FF] transition-colors">
+					<a
+						href="#space"
+						className="hover:text-[#0055FF] active:text-[#0055FF] transition-colors"
+					>
 						Space
 					</a>
 					<a
 						href="#community"
-						className="hover:text-[#0055FF] transition-colors"
+						className="hover:text-[#0055FF] active:text-[#0055FF] transition-colors"
 					>
 						Community
 					</a>
-					<a href="#contact" className="hover:text-[#0055FF] transition-colors">
+					<a
+						href="#contact"
+						className="hover:text-[#0055FF] active:text-[#0055FF] transition-colors"
+					>
 						Contact
 					</a>
+					<button
+						type="button"
+						onClick={() => setIsScheduleOpen(true)}
+						className="hover:text-[#0055FF] active:text-[#0055FF] transition-colors"
+					>
+						Schedule
+					</button>
 				</div>
 
 				<button
 					type="button"
 					aria-label={isMenuOpen ? "Close menu" : "Open menu"}
 					aria-expanded={isMenuOpen}
-					className="md:hidden text-white z-50 relative"
+					className="md:hidden text-white z-50 relative w-12 h-12 flex items-center justify-center"
 					onClick={() => setIsMenuOpen(!isMenuOpen)}
 				>
 					{isMenuOpen ? <X size={28} /> : <Menu size={28} />}
@@ -399,20 +468,74 @@ function LandingPage() {
 					>
 						<nav aria-label="Mobile navigation">
 							<div className="flex flex-col gap-8">
-								{["Program", "Space", "Community", "Contact"].map((item, i) => (
-									<motion.a
-										key={item}
-										href={`#${item.toLowerCase()}`}
-										onClick={() => setIsMenuOpen(false)}
-										initial={{ x: -50, opacity: 0 }}
-										animate={{ x: 0, opacity: 1 }}
-										transition={{ delay: 0.2 + i * 0.1 }}
-										className="text-5xl font-display font-light uppercase tracking-tighter text-white hover:text-[#0055FF] transition-colors flex items-center gap-6"
-									>
-										<span aria-hidden="true" className="text-sm font-mono opacity-40">0{i + 1}</span>
-										{item}
-									</motion.a>
-								))}
+								{["Program", "Space", "Community", "Contact", "Schedule"].map(
+									(item, i) => {
+										const linkClass =
+											"text-5xl font-display font-light uppercase tracking-tighter text-white hover:text-[#0055FF] active:text-[#0055FF] active:scale-[0.98] transition-all flex items-center gap-6 py-2";
+										const number = (
+											<span
+												aria-hidden="true"
+												className="text-sm font-mono opacity-40"
+											>
+												0{i + 1}
+											</span>
+										);
+
+										if (item === "Schedule") {
+											return (
+												<motion.div
+													key={item}
+													initial={{ x: -50, opacity: 0 }}
+													animate={{ x: 0, opacity: 1 }}
+													transition={{ delay: 0.2 + i * 0.1 }}
+												>
+													<button
+														type="button"
+														onClick={() => {
+															setIsMenuOpen(false);
+															setIsScheduleOpen(true);
+														}}
+														className={linkClass}
+													>
+														{number}
+														{item}
+													</button>
+												</motion.div>
+											);
+										}
+
+										return (
+											<motion.div
+												key={item}
+												initial={{ x: -50, opacity: 0 }}
+												animate={{ x: 0, opacity: 1 }}
+												transition={{ delay: 0.2 + i * 0.1 }}
+											>
+												<a
+													href={`#${item.toLowerCase()}`}
+													onClick={(e) => {
+														e.preventDefault();
+														setIsMenuOpen(false);
+														const target = document.querySelector(
+															`#${item.toLowerCase()}`,
+														);
+														if (target) {
+															setTimeout(
+																() =>
+																	target.scrollIntoView({ behavior: "smooth" }),
+																400,
+															);
+														}
+													}}
+													className={linkClass}
+												>
+													{number}
+													{item}
+												</a>
+											</motion.div>
+										);
+									},
+								)}
 							</div>
 						</nav>
 					</motion.div>
@@ -421,7 +544,10 @@ function LandingPage() {
 
 			<main id="main-content" className="relative z-10">
 				{/* --- HERO SECTION --- */}
-				<section aria-label="Hero — Unleash your potential at HAWC Gym" className="relative h-screen flex items-center justify-center overflow-hidden">
+				<section
+					aria-label="Hero — Unleash your potential at HAWC Gym"
+					className="relative h-screen flex items-center justify-center overflow-hidden"
+				>
 					<motion.div
 						style={{ y: heroY, opacity: heroOpacity }}
 						className="absolute inset-0 z-0"
@@ -444,8 +570,10 @@ function LandingPage() {
 							transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
 							className="mb-6 flex justify-center"
 						>
-							<p className="px-4 py-1.5 border-2 border-white/60 rounded-full text-[10px] font-mono uppercase tracking-[0.3em] text-white backdrop-blur-md">
-								Northern California's First <span className="text-[#AAFF00] font-bold">HYROX</span> Affiliate
+							<p className="px-3 sm:px-4 py-1.5 border-2 border-white/60 rounded-full text-[9px] sm:text-[10px] font-mono uppercase tracking-[0.15em] sm:tracking-[0.3em] text-white backdrop-blur-md">
+								Northern California's First{" "}
+								<span className="text-[#AAFF00] font-bold">HYROX</span>{" "}
+								Affiliate
 							</p>
 						</motion.div>
 
@@ -457,7 +585,7 @@ function LandingPage() {
 								delay: 0.2,
 								ease: [0.16, 1, 0.3, 1],
 							}}
-							className="text-[9vw] md:text-[7vw] font-display font-black uppercase leading-[0.85] tracking-tighter text-white"
+							className="text-[12vw] sm:text-[9vw] md:text-[7vw] font-display font-black uppercase leading-[0.85] tracking-tighter text-white"
 						>
 							Unleash
 							<br />
@@ -474,11 +602,11 @@ function LandingPage() {
 							initial={{ y: 50, opacity: 0 }}
 							animate={{ y: 0, opacity: 1 }}
 							transition={{ duration: 1, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
-							className="mt-12 flex justify-center"
+							className="mt-8 sm:mt-12 flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-4 px-4 sm:px-0"
 						>
 							<a
 								href="#contact"
-								className="group relative px-8 py-4 bg-white text-black font-mono text-xs font-bold uppercase tracking-widest overflow-hidden rounded-full inline-flex items-center"
+								className="group relative w-full sm:w-auto px-8 py-4 bg-white text-black font-mono text-xs font-bold uppercase tracking-widest overflow-hidden rounded-full inline-flex items-center justify-center active:scale-[0.98] transition-transform"
 							>
 								<span className="relative z-10 flex items-center gap-2">
 									Start Training{" "}
@@ -488,11 +616,25 @@ function LandingPage() {
 										className="group-hover:translate-x-1 transition-transform"
 									/>
 								</span>
-								<span aria-hidden="true" className="absolute inset-0 bg-[#0055FF] translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-[0.16,1,0.3,1]" />
-								<span aria-hidden="true" className="absolute inset-0 z-10 flex items-center justify-center gap-2 text-white translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-[0.16,1,0.3,1]">
+								<span
+									aria-hidden="true"
+									className="absolute inset-0 bg-[#0055FF] translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-[0.16,1,0.3,1]"
+								/>
+								<span
+									aria-hidden="true"
+									className="absolute inset-0 z-10 flex items-center justify-center gap-2 text-white translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-[0.16,1,0.3,1]"
+								>
 									Start Training <ArrowRight size={16} />
 								</span>
 							</a>
+							<button
+								type="button"
+								onClick={() => setIsScheduleOpen(true)}
+								className="w-full sm:w-auto px-8 py-4 border border-white/30 text-white font-mono text-xs font-bold uppercase tracking-widest rounded-full inline-flex items-center justify-center gap-2 hover:border-white/60 hover:bg-white/5 active:bg-white/10 active:border-white/60 active:scale-[0.98] transition-all"
+							>
+								<Calendar size={16} aria-hidden="true" />
+								View Schedule
+							</button>
 						</motion.div>
 					</div>
 				</section>
@@ -502,10 +644,19 @@ function LandingPage() {
 
 				{/* --- SERVICES (Horizontal Accordion) --- */}
 				{/* biome-ignore lint/correctness/useUniqueElementIds: intentional navigation anchor */}
-				<section ref={servicesSectionRef} id="program" aria-label="Fitness programs and services" className="border-b border-white/10 overflow-hidden px-8 md:px-16 lg:px-24">
+				<section
+					ref={servicesSectionRef}
+					id="program"
+					aria-label="Fitness programs and services"
+					className="border-b border-white/10 overflow-hidden px-8 md:px-16 lg:px-24"
+				>
 					<RevealText>
 						<div className="flex items-center gap-4 py-16 md:py-20">
-							<div ref={servicesLineRef} aria-hidden="true" className="w-12 h-[1px] bg-[#0055FF] origin-left" />
+							<div
+								ref={servicesLineRef}
+								aria-hidden="true"
+								className="w-12 h-[1px] bg-[#0055FF] origin-left"
+							/>
 							<h2 className="font-mono text-xs uppercase tracking-[0.3em] text-[#0055FF]">
 								Our Programs
 							</h2>
@@ -513,12 +664,17 @@ function LandingPage() {
 					</RevealText>
 
 					{/* Mobile View: Horizontal Carousel */}
-					<div className="md:hidden flex overflow-x-auto snap-x snap-mandatory pb-8 px-4 gap-4 no-scrollbar" role="list" aria-label="Fitness programs">
+					<div
+						ref={mobileCarouselRef}
+						className="md:hidden flex overflow-x-auto snap-x snap-mandatory pb-4 px-4 gap-4 no-scrollbar"
+						role="list"
+						aria-label="Fitness programs"
+					>
 						{SERVICES.map((service, i) => (
 							<article
 								key={service.title}
 								role="listitem"
-								className="group relative flex-shrink-0 w-[85vw] snap-center border border-white/10 h-[55vh] min-h-[400px] overflow-hidden"
+								className="group relative flex-shrink-0 w-[85vw] snap-center border border-white/10 h-[55vh] min-h-[400px] overflow-hidden rounded-lg"
 							>
 								<img
 									src={SERVICE_IMAGES[service.title]}
@@ -530,7 +686,12 @@ function LandingPage() {
 								<div className="absolute inset-0 bg-black/60 transition-all duration-500" />
 								<div className="relative z-10 h-full p-6 flex flex-col justify-between">
 									<div className="flex justify-between items-start text-white">
-										<span aria-hidden="true" className="text-4xl font-display font-black">0{i + 1}</span>
+										<span
+											aria-hidden="true"
+											className="text-4xl font-display font-black"
+										>
+											0{i + 1}
+										</span>
 										<ArrowDownRight aria-hidden="true" className="w-8 h-8" />
 									</div>
 									<div className="text-white">
@@ -545,9 +706,28 @@ function LandingPage() {
 							</article>
 						))}
 					</div>
+					{/* Mobile pagination dots */}
+					<div
+						className="md:hidden flex justify-center gap-2 pb-8"
+						aria-hidden="true"
+					>
+						{SERVICES.map((_, i) => (
+							<span
+								// biome-ignore lint/suspicious/noArrayIndexKey: static dot array
+								key={i}
+								className={`w-2 h-2 rounded-full transition-colors duration-300 ${
+									activeServiceIndex === i ? "bg-[#0055FF]" : "bg-white/20"
+								}`}
+							/>
+						))}
+					</div>
 
 					{/* Desktop View: Horizontal Hover Accordion */}
-					<div className="hidden md:flex h-[600px]" role="list" aria-label="Fitness programs">
+					<div
+						className="hidden md:flex h-[600px]"
+						role="list"
+						aria-label="Fitness programs"
+					>
 						{SERVICES.map((service, i) => (
 							<article
 								key={service.title}
@@ -566,7 +746,10 @@ function LandingPage() {
 
 								<div className="relative z-10 h-full w-full pointer-events-none">
 									{/* Top number */}
-									<div aria-hidden="true" className="absolute top-8 left-8 text-xl font-mono font-bold border-b-2 inline-block pb-1 transition-colors duration-300 text-white/50 border-white/50 group-hover:text-white group-hover:border-white">
+									<div
+										aria-hidden="true"
+										className="absolute top-8 left-8 text-xl font-mono font-bold border-b-2 inline-block pb-1 transition-colors duration-300 text-white/50 border-white/50 group-hover:text-white group-hover:border-white"
+									>
 										0{i + 1}
 									</div>
 
@@ -577,13 +760,19 @@ function LandingPage() {
 
 									{/* Expanded content */}
 									<div className="absolute bottom-0 left-0 w-full p-8 md:p-12 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500 delay-75 flex flex-col justify-end h-1/2 bg-gradient-to-t from-black/90 to-transparent">
-										<p aria-hidden="true" className="text-4xl lg:text-6xl font-display font-black uppercase text-white mb-4 leading-[0.9]">
+										<p
+											aria-hidden="true"
+											className="text-4xl lg:text-6xl font-display font-black uppercase text-white mb-4 leading-[0.9]"
+										>
 											{service.title}
 										</p>
 										<p className="text-white/90 text-lg font-bold leading-relaxed max-w-md">
 											{service.description}
 										</p>
-										<div aria-hidden="true" className="mt-6 flex items-center gap-3 text-[#0055FF] font-bold uppercase tracking-widest text-sm">
+										<div
+											aria-hidden="true"
+											className="mt-6 flex items-center gap-3 text-[#0055FF] font-bold uppercase tracking-widest text-sm"
+										>
 											Explore <ArrowRight size={20} />
 										</div>
 									</div>
@@ -593,12 +782,15 @@ function LandingPage() {
 					</div>
 				</section>
 
-				<div aria-hidden="true" className="py-16 md:py-24 bg-[#050505]" />
+				<div aria-hidden="true" className="py-8 md:py-16 bg-[#050505]" />
 
 				{/* --- THE SPACE (SPLIT LAYOUT) --- */}
 				<TheSpaceSection />
 
-<CommunitySection />
+				<CommunitySection />
+
+				{/* --- REVIEWS / TESTIMONIALS --- */}
+				<ReviewsSection />
 
 				{/* --- CONTACT FOOTER --- */}
 				{/* biome-ignore lint/correctness/useUniqueElementIds: intentional navigation anchor */}
@@ -609,17 +801,27 @@ function LandingPage() {
 					<div aria-hidden="true" className="absolute inset-0 bg-[#0055FF]/5" />
 
 					<div className="relative z-10 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2">
-						<div ref={contactLeftRef} className="p-12 md:p-24">
-							<h2 data-form-field className="text-5xl md:text-7xl font-display font-black uppercase leading-[0.9] tracking-tighter mb-6">
+						<div ref={contactLeftRef} className="p-6 sm:p-8 md:p-16 lg:p-24">
+							<h2
+								data-form-field
+								className="text-5xl md:text-7xl font-display font-black uppercase leading-[0.9] tracking-tighter mb-6"
+							>
 								Start
 								<br />
 								Training.
 							</h2>
-							<p data-form-field className="text-white/50 font-mono text-xs uppercase tracking-widest mb-16">
+							<p
+								data-form-field
+								className="text-white/50 font-mono text-xs uppercase tracking-widest mb-16"
+							>
 								First class is on us.
 							</p>
 
-							<form aria-label="Contact form — get your free first class" className="space-y-10" onSubmit={(e) => e.preventDefault()}>
+							<form
+								aria-label="Contact form — get your free first class"
+								className="space-y-10"
+								onSubmit={(e) => e.preventDefault()}
+							>
 								<div className="grid grid-cols-1 md:grid-cols-2 gap-10">
 									<div data-form-field className="relative group">
 										<input
@@ -628,12 +830,12 @@ function LandingPage() {
 											name="name"
 											autoComplete="name"
 											required
-											className="w-full bg-transparent border-b border-white/20 py-2 text-white font-sans focus:outline-none focus:border-[#0055FF] transition-colors peer placeholder-transparent"
+											className="w-full bg-transparent border-b border-white/20 py-3 text-white font-sans focus:outline-none focus:border-[#0055FF] transition-colors peer placeholder-transparent"
 											placeholder="Name"
 										/>
 										<label
 											htmlFor={nameId}
-											className="absolute left-0 top-2 text-white/40 font-mono text-xs uppercase tracking-widest transition-all peer-focus:-top-5 peer-focus:text-[10px] peer-focus:text-[#0055FF] peer-valid:-top-5 peer-valid:text-[10px]"
+											className="absolute left-0 top-3 text-white/40 font-mono text-xs uppercase tracking-widest transition-all peer-focus:-top-5 peer-focus:text-[10px] peer-focus:text-[#0055FF] peer-valid:-top-5 peer-valid:text-[10px]"
 										>
 											Name
 										</label>
@@ -645,12 +847,12 @@ function LandingPage() {
 											name="phone"
 											autoComplete="tel"
 											required
-											className="w-full bg-transparent border-b border-white/20 py-2 text-white font-sans focus:outline-none focus:border-[#0055FF] transition-colors peer placeholder-transparent"
+											className="w-full bg-transparent border-b border-white/20 py-3 text-white font-sans focus:outline-none focus:border-[#0055FF] transition-colors peer placeholder-transparent"
 											placeholder="Phone"
 										/>
 										<label
 											htmlFor={phoneId}
-											className="absolute left-0 top-2 text-white/40 font-mono text-xs uppercase tracking-widest transition-all peer-focus:-top-5 peer-focus:text-[10px] peer-focus:text-[#0055FF] peer-valid:-top-5 peer-valid:text-[10px]"
+											className="absolute left-0 top-3 text-white/40 font-mono text-xs uppercase tracking-widest transition-all peer-focus:-top-5 peer-focus:text-[10px] peer-focus:text-[#0055FF] peer-valid:-top-5 peer-valid:text-[10px]"
 										>
 											Phone
 										</label>
@@ -661,13 +863,14 @@ function LandingPage() {
 										id={messageId}
 										name="message"
 										rows={1}
+										autoComplete="off"
 										required
-										className="w-full bg-transparent border-b border-white/20 py-2 text-white font-sans focus:outline-none focus:border-[#0055FF] transition-colors peer placeholder-transparent resize-none"
+										className="w-full bg-transparent border-b border-white/20 py-3 text-white font-sans focus:outline-none focus:border-[#0055FF] transition-colors peer placeholder-transparent resize-none"
 										placeholder="Message"
 									/>
 									<label
 										htmlFor={messageId}
-										className="absolute left-0 top-2 text-white/40 font-mono text-xs uppercase tracking-widest transition-all peer-focus:-top-5 peer-focus:text-[10px] peer-focus:text-[#0055FF] peer-valid:-top-5 peer-valid:text-[10px]"
+										className="absolute left-0 top-3 text-white/40 font-mono text-xs uppercase tracking-widest transition-all peer-focus:-top-5 peer-focus:text-[10px] peer-focus:text-[#0055FF] peer-valid:-top-5 peer-valid:text-[10px]"
 									>
 										Goals / Message
 									</label>
@@ -676,7 +879,7 @@ function LandingPage() {
 								<button
 									data-form-field
 									type="submit"
-									className="group relative w-full md:w-auto px-10 py-4 bg-white text-black font-mono text-xs font-bold uppercase tracking-widest overflow-hidden rounded-full mt-8"
+									className="group relative w-full md:w-auto px-10 py-4 bg-white text-black font-mono text-xs font-bold uppercase tracking-widest overflow-hidden rounded-full mt-8 active:scale-[0.98] transition-transform"
 								>
 									<span className="relative z-10 flex items-center justify-center gap-2">
 										Send Message{" "}
@@ -686,15 +889,24 @@ function LandingPage() {
 											className="group-hover:translate-x-1 transition-transform"
 										/>
 									</span>
-									<span aria-hidden="true" className="absolute inset-0 bg-[#0055FF] translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-[0.16,1,0.3,1]" />
-									<span aria-hidden="true" className="absolute inset-0 z-10 flex items-center justify-center gap-2 text-white translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-[0.16,1,0.3,1]">
+									<span
+										aria-hidden="true"
+										className="absolute inset-0 bg-[#0055FF] translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-[0.16,1,0.3,1]"
+									/>
+									<span
+										aria-hidden="true"
+										className="absolute inset-0 z-10 flex items-center justify-center gap-2 text-white translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-[0.16,1,0.3,1]"
+									>
 										Send Message <ArrowRight size={16} />
 									</span>
 								</button>
 							</form>
 						</div>
 
-						<div ref={contactRightRef} className="p-12 md:p-24 flex flex-col justify-between bg-gradient-to-br from-white/[0.03] to-white/[0.07]">
+						<div
+							ref={contactRightRef}
+							className="p-6 sm:p-8 md:p-16 lg:p-24 flex flex-col justify-between bg-gradient-to-b from-white/[0.04] via-white/[0.06] to-transparent"
+						>
 							<div>
 								<h3 className="font-mono text-xs uppercase tracking-[0.3em] text-white/40 mb-12">
 									Connect With Us
@@ -706,7 +918,7 @@ function LandingPage() {
 										target="_blank"
 										rel="noopener noreferrer"
 										aria-label="Follow HAWC Gym on Instagram"
-										className="flex items-center gap-4 text-white/70 hover:text-white transition-colors group"
+										className="flex items-center gap-4 text-white/70 hover:text-white active:text-white transition-colors group"
 									>
 										<span className="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center group-hover:border-[#0055FF] group-hover:bg-[#0055FF]/10 transition-colors">
 											<Instagram size={18} aria-hidden="true" />
@@ -721,7 +933,7 @@ function LandingPage() {
 										target="_blank"
 										rel="noopener noreferrer"
 										aria-label="Follow HAWC Gym on Facebook"
-										className="flex items-center gap-4 text-white/70 hover:text-white transition-colors group"
+										className="flex items-center gap-4 text-white/70 hover:text-white active:text-white transition-colors group"
 									>
 										<span className="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center group-hover:border-[#0055FF] group-hover:bg-[#0055FF]/10 transition-colors">
 											<Facebook size={18} aria-hidden="true" />
@@ -736,7 +948,7 @@ function LandingPage() {
 										target="_blank"
 										rel="noopener noreferrer"
 										aria-label="View HAWC Gym reviews on Yelp"
-										className="flex items-center gap-4 text-white/70 hover:text-white transition-colors group"
+										className="flex items-center gap-4 text-white/70 hover:text-white active:text-white transition-colors group"
 									>
 										<span className="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center group-hover:border-[#0055FF] group-hover:bg-[#0055FF]/10 transition-colors">
 											<YelpIcon className="w-5 h-5" />
@@ -748,9 +960,16 @@ function LandingPage() {
 								</nav>
 							</div>
 
-							<address data-contact-address className="mt-16 space-y-4 not-italic">
+							<address
+								data-contact-address
+								className="mt-16 space-y-4 not-italic"
+							>
 								<div className="flex items-start gap-4 text-white/60">
-									<MapPin size={18} aria-hidden="true" className="text-[#0055FF] shrink-0 mt-1" />
+									<MapPin
+										size={18}
+										aria-hidden="true"
+										className="text-[#0055FF] shrink-0 mt-1"
+									/>
 									<a
 										href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(GYM_INFO.address)}`}
 										target="_blank"
@@ -761,23 +980,43 @@ function LandingPage() {
 									</a>
 								</div>
 								<div className="flex items-center gap-4 text-white/60">
-									<Phone size={18} aria-hidden="true" className="text-[#0055FF] shrink-0" />
-									<a href={`tel:${GYM_INFO.phonePrimary.replace(/-/g, "")}`} className="font-mono text-sm hover:text-white transition-colors">
+									<Phone
+										size={18}
+										aria-hidden="true"
+										className="text-[#0055FF] shrink-0"
+									/>
+									<a
+										href={`tel:${GYM_INFO.phonePrimary.replace(/-/g, "")}`}
+										className="font-mono text-sm hover:text-white transition-colors"
+									>
 										{GYM_INFO.phonePrimary}
 									</a>
 								</div>
 								<div className="flex items-center gap-4 text-white/60">
-									<Mail size={18} aria-hidden="true" className="text-[#0055FF] shrink-0" />
-									<a href={`mailto:${GYM_INFO.email}`} className="font-mono text-sm hover:text-white transition-colors">
+									<Mail
+										size={18}
+										aria-hidden="true"
+										className="text-[#0055FF] shrink-0"
+									/>
+									<a
+										href={`mailto:${GYM_INFO.email}`}
+										className="font-mono text-sm hover:text-white transition-colors"
+									>
 										{GYM_INFO.email}
 									</a>
 								</div>
 								<div className="flex items-start gap-4 text-white/60 pt-2">
-									<Clock size={18} aria-hidden="true" className="text-[#0055FF] shrink-0 mt-0.5" />
+									<Clock
+										size={18}
+										aria-hidden="true"
+										className="text-[#0055FF] shrink-0 mt-0.5"
+									/>
 									<dl className="font-mono text-sm space-y-1">
 										{GYM_INFO.hours.map(({ day, open, close }) => (
 											<div key={day} className="flex gap-3">
-												<dt className="w-28 text-white/40">{day}</dt>
+												<dt className="w-24 sm:w-28 text-white/40 shrink-0">
+													{day}
+												</dt>
 												<dd>{open ? `${open} – ${close}` : "Closed"}</dd>
 											</div>
 										))}
@@ -787,7 +1026,7 @@ function LandingPage() {
 						</div>
 					</div>
 
-					<div className="border-t border-white/10 py-6 px-6 text-center md:flex md:justify-between md:px-12 items-center bg-[#050505]">
+					<div className="border-t border-white/10 py-6 px-6 text-center md:flex md:justify-between md:px-12 items-center bg-[#050505] safe-area-bottom">
 						<p className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/30">
 							© {new Date().getFullYear()} HAWC GYM. All Rights Reserved.
 						</p>
@@ -797,6 +1036,12 @@ function LandingPage() {
 					</div>
 				</footer>
 			</main>
+
+			<ScheduleModal
+				isOpen={isScheduleOpen}
+				onClose={() => setIsScheduleOpen(false)}
+			/>
+			<ScrollToTop />
 		</div>
 	);
 }

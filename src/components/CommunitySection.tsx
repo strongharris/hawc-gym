@@ -212,24 +212,28 @@ export default function CommunitySection() {
 				</div>
 
 				{/* Card carousel */}
-				<div className="relative flex items-center justify-center h-[24rem] md:h-[30rem]">
+				<div className="relative flex items-center justify-center h-[26rem] md:h-[30rem]">
 					<ul
 						ref={cardsRef}
-						className="relative w-[16rem] md:w-[20rem] h-[22rem] md:h-[28rem]"
+						className="relative w-[18rem] md:w-[20rem] h-[24rem] md:h-[28rem]"
 						aria-label="Community photos"
 					>
 						{GALLERY_PHOTOS.map((photo, i) => (
 							<li
 								// biome-ignore lint/suspicious/noArrayIndexKey: static gallery array
 								key={i}
-								className="list-none absolute top-0 left-0 w-[16rem] md:w-[20rem] rounded-lg overflow-hidden shadow-2xl shadow-black/50"
-								style={{
-									aspectRatio: "3 / 4",
-									backgroundImage: `url(${photo.src})`,
-									backgroundSize: "cover",
-									backgroundPosition: "center",
-								}}
+								className="list-none absolute top-0 left-0 w-[18rem] md:w-[20rem] rounded-lg overflow-hidden shadow-2xl shadow-black/50"
+								style={{ aspectRatio: "3 / 4" }}
 							>
+								<img
+									src={photo.src}
+									alt={photo.alt}
+									width={photo.w}
+									height={photo.h}
+									loading="lazy"
+									decoding="async"
+									className="w-full h-full object-cover"
+								/>
 								<div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
 							</li>
 						))}
@@ -244,18 +248,19 @@ export default function CommunitySection() {
 					<button
 						type="button"
 						aria-label="Previous photo"
-						className="w-12 h-12 rounded-full border border-white/20 flex items-center justify-center text-white/70 hover:text-white hover:border-white/50 hover:bg-white/5 transition-colors"
+						className="w-12 h-12 rounded-full border border-white/20 flex items-center justify-center text-white/70 hover:text-white hover:border-white/50 hover:bg-white/5 active:bg-white/10 active:scale-95 transition-all"
 						onClick={() => step(-1)}
 					>
 						<ChevronLeft size={20} />
 					</button>
 					<span className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/30">
-						Swipe or Tap
+						<span className="md:hidden">Swipe or Tap</span>
+						<span className="hidden md:inline">Drag to Explore</span>
 					</span>
 					<button
 						type="button"
 						aria-label="Next photo"
-						className="w-12 h-12 rounded-full border border-white/20 flex items-center justify-center text-white/70 hover:text-white hover:border-white/50 hover:bg-white/5 transition-colors"
+						className="w-12 h-12 rounded-full border border-white/20 flex items-center justify-center text-white/70 hover:text-white hover:border-white/50 hover:bg-white/5 active:bg-white/10 active:scale-95 transition-all"
 						onClick={() => step(1)}
 					>
 						<ChevronRight size={20} />

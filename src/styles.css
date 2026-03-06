@@ -107,3 +107,16 @@ body {
 	white-space: nowrap;
 	border-width: 0;
 }
+
+/* Safe area handling for notched devices (iPhone Dynamic Island, etc.) */
+.safe-area-top {
+	padding-top: max(1.5rem, env(safe-area-inset-top));
+}
+
+.safe-area-bottom {
+	padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+}
+
+.safe-area-bottom-btn {
+	bottom: max(1.5rem, env(safe-area-inset-bottom));
+}
