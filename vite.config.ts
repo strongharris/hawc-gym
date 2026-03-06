@@ -12,6 +12,11 @@ const config = defineConfig({
 	server: {
 		port: 3001,
 	},
+	ssr: {
+		// GSAP is ESM-only but the Netlify SSR runtime expects CJS.
+		// Bundling it (noExternal) lets Vite handle the conversion.
+		noExternal: ["gsap"],
+	},
 	plugins: [
 		devtools({ eventBusConfig: { port: 42070 } }),
 		netlify(),

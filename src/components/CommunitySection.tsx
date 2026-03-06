@@ -1,8 +1,6 @@
 import { useEffect, useRef } from "react";
 import { gsap } from "../lib/gsap";
-import DraggablePkg from "gsap/Draggable";
-
-const Draggable = DraggablePkg;
+import { Draggable } from "gsap/Draggable";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { GALLERY_PHOTOS } from "../assets/images";
 import { useGsapLineReveal } from "../hooks/useGsapLineReveal";
